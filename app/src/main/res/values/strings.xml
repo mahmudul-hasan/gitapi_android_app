@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">Wework Github App</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="view_profile">View Profile</string>
+    <string name="view_repositories">View Repositories</string>
+    <string name="profile_repos">Repos:</string>
+    <string name="profile_gists">Gists:</string>
+    <string name="profile_followers">Followers:</string>
+    <string name="profile_following">Following:</string>
+</resources>
