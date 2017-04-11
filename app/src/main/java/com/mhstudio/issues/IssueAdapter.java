@@ -71,6 +71,10 @@ public class IssueAdapter extends BaseAdapter {
     private void setValuesToViews(IssuesModel model, IssueViewHolder viewHolder) {
         viewHolder.tvIssueName.setText(model.getTitle());
         viewHolder.tvIssueNum.setText("#"+model.getNumber());
-        viewHolder.tvIssueState.setText(model.getState());
+        viewHolder.tvIssueState.setText(model.getState().equals("open") ? "Open" : "Closed");
+    }
+
+    public void setData(IssuesModel[] data){
+        mModelArray = data;
     }
 }

@@ -1,18 +1,22 @@
 package com.mhstudio.weworkgithubapp;
 
+import android.content.Context;
+import android.content.DialogInterface;
 import android.os.AsyncTask;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
+import android.widget.TextView;
+import android.widget.Toast;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.mhstudio.issues.IssueDetailsFragment;
 import com.mhstudio.issues.IssueDetailsTask;
 import com.mhstudio.issues.IssueFetcherTask;
@@ -25,6 +29,12 @@ import com.mhstudio.repo.ReposFetcherTask;
 import com.mhstudio.repo.ReposFragment;
 import com.mhstudio.repo.ReposModel;
 
+import org.eclipse.egit.github.core.Authorization;
+import org.eclipse.egit.github.core.client.GitHubClient;
+import org.eclipse.egit.github.core.service.IssueService;
+import org.eclipse.egit.github.core.service.OAuthService;
+import org.eclipse.egit.github.core.service.RepositoryService;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -35,9 +45,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity implements ReposFragment.RepositoryListener, IssuesFragment.IssueListener {
+public class MainActivity extends AppCompatActivity implements ReposFragment.RepositoryListener,
+        IssuesFragment.IssueListener, IssueDetailsFragment.IssueDetailsListener {
 
-    private Button mProfile, mRepo;
+    private Button mProfile, mRepo, mLogin;
     private LinearLayout llButtons;
 
     private ProfileFragment mProfileFragment;
@@ -51,26 +62,41 @@ public class MainActivity extends AppCompatActivity implements ReposFragment.Rep
     private IssuesModel mIssuesModel;
 
     private String mUser = "octocat";
+    private String mPassword = "";
     private String mSelectedRepo = null;
+    private int mSelectedIssueNum = -1;
+    private String mSelectedIssueUrl = null;
+
+    private GitHubClient mGithubClient;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        mGithubClient = new GitHubClient();
+
         mProfileModel = null;
         mReposArray = null;
         mIssuesArray = null;
 
         //Get the views' references from the layout
+        mLogin = (Button) findViewById(R.id.btn_login);
         mProfile = (Button) findViewById(R.id.btn_profile);
         mRepo = (Button) findViewById(R.id.btn_repo);
         llButtons = (LinearLayout) findViewById(R.id.ll_buttons);
+
+        mProfile.setVisibility(View.GONE);
+        mRepo.setVisibility(View.GONE);
 
         View.OnClickListener onClickListener = new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 switch (v.getId()){
+                    case R.id.btn_login:
+                        initiateLoginProcess();
+                        break;
+
                     case R.id.btn_profile:
                         (new ProfileFetcherTask(MainActivity.this, mUser)).execute();
                         Log.i("BUTTON", "profile");
@@ -85,6 +111,7 @@ public class MainActivity extends AppCompatActivity implements ReposFragment.Rep
         };
 
         //Register click listeners for buttons
+        mLogin.setOnClickListener(onClickListener);
         mProfile.setOnClickListener(onClickListener);
         mRepo.setOnClickListener(onClickListener);
 
@@ -113,6 +140,22 @@ public class MainActivity extends AppCompatActivity implements ReposFragment.Rep
             //commit the fragment transaction
             fragTrans.commit();
         }
+    }
+
+    public GitHubClient getGithubClient(){
+        return mGithubClient;
+    }
+
+    public String getUser(){
+        return mUser;
+    }
+
+    public String getSelectedRepo(){
+        return mSelectedRepo;
+    }
+
+    public int getSelectedIssueNum(){
+        return mSelectedIssueNum;
     }
 
     public void setProfileModel(ProfileModel model){
@@ -163,19 +206,33 @@ public class MainActivity extends AppCompatActivity implements ReposFragment.Rep
         if(mIssuesFragment == null){
             mIssuesFragment = IssuesFragment.newInstance();
         }
-        startFragment(mIssuesFragment);
+        if(!mIssuesFragment.isAdded()) startFragment(mIssuesFragment);
+        else mIssuesFragment.setUpdatedIssues(mIssuesArray);
     }
 
     public void loadIssueDetailsFragment(){
         if(mIssueDetailsFragment == null){
             mIssueDetailsFragment = IssueDetailsFragment.newInstance();
         }
-        startFragment(mIssueDetailsFragment);
+        if(!mIssueDetailsFragment.isAdded()) startFragment(mIssueDetailsFragment);
+        else mIssueDetailsFragment.updateUI();
     }
 
     @Override
-    public void onIssueSelected(String url) {
+    public void onIssueSelected(String url, int issueNum) {
+        mSelectedIssueUrl = url;
+        mSelectedIssueNum = issueNum;
         (new IssueDetailsTask(MainActivity.this, url)).execute();
+    }
+
+    @Override
+    public void requestIssuesDataUpdate() {
+        onRepositorySelected(mSelectedRepo);
+    }
+
+    @Override
+    public void onIssueChanged() {
+        if(mSelectedIssueUrl != null) onIssueSelected(mSelectedIssueUrl, mSelectedIssueNum);
     }
 
     @Override
@@ -183,5 +240,64 @@ public class MainActivity extends AppCompatActivity implements ReposFragment.Rep
         mSelectedRepo = repoName;
         String urlStr = "https://api.github.com/repos/"+mUser+"/"+repoName+"/issues?state=all";
         (new IssueFetcherTask(urlStr, MainActivity.this)).execute();
+    }
+
+    private void initiateLoginProcess() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+        final View loginView = ((LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE))
+                .inflate(R.layout.dialog_login, null);
+        builder.setView(loginView);
+        builder.setTitle(R.string.login);
+        builder.setPositiveButton("Login", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                TextView userName = (TextView) loginView.findViewById(R.id.login_username);
+                TextView password = (TextView) loginView.findViewById(R.id.login_password);
+                mUser = "mahmudul-hasan"; //userName.getText().toString().trim();
+                mPassword = "passwordB4DGITHUB"; //password.getText().toString().trim();
+
+                mGithubClient.setCredentials(mUser, mPassword);
+
+                (new AuthenticationTask()).execute();
+            }
+        }).setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+            }
+        }).create().show();
+    }
+
+    private class AuthenticationTask extends AsyncTask<Void, Void, Boolean>{
+        @Override
+        protected Boolean doInBackground(Void... params) {
+
+            //Validating login
+            RepositoryService rs = new RepositoryService(mGithubClient);
+            try{
+                Log.i("LIBTEST", rs.getRepositories().size()+"");
+                return true;
+            }catch (IOException e){
+                Log.i("LIBTEST", e.toString());
+                return false;
+            }
+        }
+
+        @Override
+        protected void onPostExecute(Boolean isLoggedIn) {
+            super.onPostExecute(isLoggedIn);
+            //Setup the home UI based on the validation
+            if(isLoggedIn){
+                mLogin.setText("Sign out");
+                mProfile.setVisibility(View.VISIBLE);
+                mRepo.setVisibility(View.VISIBLE);
+            }else{
+                mLogin.setText("Sign in");
+                mProfile.setVisibility(View.GONE);
+                mRepo.setVisibility(View.GONE);
+
+                Toast.makeText(MainActivity.this, "Failed to log in. Please check your credentials.", Toast.LENGTH_LONG).show();
+            }
+        }
     }
 }

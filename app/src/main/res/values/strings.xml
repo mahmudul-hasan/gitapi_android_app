@@ -9,4 +9,6 @@
     <string name="profile_gists">Gists:</string>
     <string name="profile_followers">Followers:</string>
     <string name="profile_following">Following:</string>
+    <string name="login">Login</string>
+    <string name="create_issue">Create new issue</string>
 </resources>

@@ -6,41 +6,87 @@
     tools:context="com.mhstudio.issues.IssueDetailsFragment"
     android:padding="10dp">
 
-    <TextView
-        android:id="@+id/issue_detail_title"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="This is the issue title"
-        android:textSize="@dimen/abc_text_size_large_material"
-        android:textStyle="bold"/>
-
-    <TextView
-        android:id="@+id/issue_detail_body"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="This is the issue body message"
-        android:textSize="@dimen/abc_text_size_medium_material"
-        android:layout_below="@id/issue_detail_title"/>
-
     <RelativeLayout
-        android:id="@+id/rl_issue_detail_author"
+        android:id="@+id/rl_issue_detail_desc"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/issue_detail_body"
-        android:layout_marginBottom="10dp">
+        android:layout_height="wrap_content">
+        <TextView
+            android:id="@+id/issue_detail_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="This is the issue title"
+            android:layout_marginRight="50dp"
+            android:textSize="@dimen/abc_text_size_large_material"
+            android:textStyle="bold"/>
 
         <TextView
-            android:id="@+id/issue_detail_createdby"
-            android:layout_width="wrap_content"
+            android:id="@+id/issue_detail_body"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Created by: "/>
+            android:text="This is the issue body message"
+            android:layout_marginRight="50dp"
+            android:textSize="@dimen/abc_text_size_medium_material"
+            android:layout_below="@id/issue_detail_title"/>
 
-        <TextView
-            android:id="@+id/issue_detail_author"
+        <RelativeLayout
+            android:id="@+id/rl_issue_detail_author"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/issue_detail_body">
+
+            <TextView
+                android:id="@+id/issue_detail_createdby"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Created by: "/>
+
+            <TextView
+                android:id="@+id/issue_detail_author"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="joe420"
+                android:layout_toRightOf="@+id/issue_detail_createdby"/>
+
+        </RelativeLayout>
+
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="joe420"
-            android:layout_toRightOf="@+id/issue_detail_createdby"/>
+            android:layout_below="@+id/rl_issue_detail_author">
+            <ImageView
+                android:id="@+id/issue_detail_state_image"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:src="@drawable/ic_open"/>
+            <TextView
+                android:id="@+id/issue_detail_state"
+                android:layout_width="wrap_content"
+                android:layout_height="30dp"
+                android:text="Open"
+                android:layout_marginBottom="10dp"
+                android:gravity="center"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_alignParentRight="true"
+            android:layout_marginRight="10dp"
+            android:layout_marginLeft="30dp">
+            <Button
+                android:id="@+id/issue_detail_edit"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:background="@drawable/ic_edit"
+                android:layout_marginBottom="10dp"/>
+
+            <Button
+                android:id="@+id/issue_detail_changestate"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:background="@drawable/ic_close"/>
+        </LinearLayout>
 
     </RelativeLayout>
 
@@ -48,7 +94,7 @@
         android:id="@+id/issue_detail_commentheader"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/rl_issue_detail_author"
+        android:layout_below="@+id/rl_issue_detail_desc"
         android:text="Comments"/>
 
     <ListView
