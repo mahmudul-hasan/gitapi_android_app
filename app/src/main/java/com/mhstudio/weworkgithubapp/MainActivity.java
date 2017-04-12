@@ -11,6 +11,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
@@ -29,21 +30,10 @@ import com.mhstudio.repo.ReposFetcherTask;
 import com.mhstudio.repo.ReposFragment;
 import com.mhstudio.repo.ReposModel;
 
-import org.eclipse.egit.github.core.Authorization;
 import org.eclipse.egit.github.core.client.GitHubClient;
-import org.eclipse.egit.github.core.service.IssueService;
-import org.eclipse.egit.github.core.service.OAuthService;
 import org.eclipse.egit.github.core.service.RepositoryService;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements ReposFragment.RepositoryListener,
         IssuesFragment.IssueListener, IssueDetailsFragment.IssueDetailsListener {
@@ -73,6 +63,7 @@ public class MainActivity extends AppCompatActivity implements ReposFragment.Rep
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        getSupportActionBar().setTitle(R.string.home_title);
 
         mGithubClient = new GitHubClient();
 
@@ -94,17 +85,21 @@ public class MainActivity extends AppCompatActivity implements ReposFragment.Rep
             public void onClick(View v) {
                 switch (v.getId()){
                     case R.id.btn_login:
-                        initiateLoginProcess();
+                        if(mLogin.getText().toString().equals(getString(R.string.signin))) {
+                            initiateLoginProcess();
+                        }else{
+                            mLogin.setText(R.string.signin);
+                            mProfile.setVisibility(View.GONE);
+                            mRepo.setVisibility(View.GONE);
+                        }
                         break;
 
                     case R.id.btn_profile:
                         (new ProfileFetcherTask(MainActivity.this, mUser)).execute();
-                        Log.i("BUTTON", "profile");
                         break;
 
                     case R.id.btn_repo:
                         (new ReposFetcherTask(MainActivity.this, mUser)).execute();
-                        Log.i("BUTTON", "repo");
                         break;
                 }
             }
@@ -119,29 +114,32 @@ public class MainActivity extends AppCompatActivity implements ReposFragment.Rep
         getSupportFragmentManager().addOnBackStackChangedListener(new FragmentManager.OnBackStackChangedListener() {
             @Override
             public void onBackStackChanged() {
-                Log.i("BACKENTRYCOUNT", ""+getSupportFragmentManager().getBackStackEntryCount());
                 if(getSupportFragmentManager().getBackStackEntryCount() == 0){
                     llButtons.setVisibility(View.VISIBLE);
+                    getSupportActionBar().setDisplayHomeAsUpEnabled(false);
+                    getSupportActionBar().setTitle(R.string.home_title);
+                }else{
+                    llButtons.setVisibility(View.GONE);
+                    getSupportActionBar().setDisplayHomeAsUpEnabled(true);
                 }
             }
         });
     }
 
-    private void startFragment(Fragment fragment){
-        FragmentManager fragMan = getSupportFragmentManager();
-        FragmentTransaction fragTrans = fragMan.beginTransaction();
-        if (fragment != null){
-            //replace or put the fragment on the container
-            fragTrans.replace(R.id.fragment_container, fragment);
-
-            //put the fragment into the backstack for the proper back navigation
-            fragTrans.addToBackStack(fragment.getTag());
-
-            //commit the fragment transaction
-            fragTrans.commit();
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()){
+            case android.R.id.home:
+                getSupportFragmentManager().popBackStack();
+                break;
         }
+
+        return super.onOptionsItemSelected(item);
     }
 
+    /**
+     * Getters and setters
+     * */
     public GitHubClient getGithubClient(){
         return mGithubClient;
     }
@@ -186,12 +184,29 @@ public class MainActivity extends AppCompatActivity implements ReposFragment.Rep
         return mIssuesModel;
     }
 
+    /**
+     * Fragment loaders
+     * */
+    private void startFragment(Fragment fragment){
+        FragmentManager fragMan = getSupportFragmentManager();
+        FragmentTransaction fragTrans = fragMan.beginTransaction();
+        if (fragment != null){
+            //replace or put the fragment on the container
+            fragTrans.replace(R.id.fragment_container, fragment);
+
+            //put the fragment into the backstack for the proper back navigation
+            fragTrans.addToBackStack(fragment.getTag());
+
+            //commit the fragment transaction
+            fragTrans.commit();
+        }
+    }
+
     public void loadProfileFragment(){
         if(mProfileFragment == null){
             mProfileFragment = ProfileFragment.newInstance();
         }
         startFragment(mProfileFragment);
-        llButtons.setVisibility(View.GONE);
     }
 
     public void loadReposFragment(){
@@ -199,7 +214,6 @@ public class MainActivity extends AppCompatActivity implements ReposFragment.Rep
             mReposFragment = ReposFragment.newInstance();
         }
         startFragment(mReposFragment);
-        llButtons.setVisibility(View.GONE);
     }
 
     public void loadIssuesFragment(){
@@ -218,6 +232,9 @@ public class MainActivity extends AppCompatActivity implements ReposFragment.Rep
         else mIssueDetailsFragment.updateUI();
     }
 
+    /**
+     * Overridden callbacks for the implemented interfaces
+     * */
     @Override
     public void onIssueSelected(String url, int issueNum) {
         mSelectedIssueUrl = url;
@@ -242,6 +259,9 @@ public class MainActivity extends AppCompatActivity implements ReposFragment.Rep
         (new IssueFetcherTask(urlStr, MainActivity.this)).execute();
     }
 
+    /**
+     * Private helper methods and classes
+     * */
     private void initiateLoginProcess() {
         AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
         final View loginView = ((LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE))
@@ -253,8 +273,8 @@ public class MainActivity extends AppCompatActivity implements ReposFragment.Rep
             public void onClick(DialogInterface dialog, int which) {
                 TextView userName = (TextView) loginView.findViewById(R.id.login_username);
                 TextView password = (TextView) loginView.findViewById(R.id.login_password);
-                mUser = "mahmudul-hasan"; //userName.getText().toString().trim();
-                mPassword = "passwordB4DGITHUB"; //password.getText().toString().trim();
+                mUser = userName.getText().toString().trim();
+                mPassword = password.getText().toString().trim();
 
                 mGithubClient.setCredentials(mUser, mPassword);
 
@@ -288,11 +308,11 @@ public class MainActivity extends AppCompatActivity implements ReposFragment.Rep
             super.onPostExecute(isLoggedIn);
             //Setup the home UI based on the validation
             if(isLoggedIn){
-                mLogin.setText("Sign out");
+                mLogin.setText(R.string.signout);
                 mProfile.setVisibility(View.VISIBLE);
                 mRepo.setVisibility(View.VISIBLE);
             }else{
-                mLogin.setText("Sign in");
+                mLogin.setText(R.string.signin);
                 mProfile.setVisibility(View.GONE);
                 mRepo.setVisibility(View.GONE);
 

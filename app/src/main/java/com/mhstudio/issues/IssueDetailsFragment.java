@@ -19,6 +19,7 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -55,7 +56,7 @@ public class IssueDetailsFragment extends Fragment {
     private IssueDetailsListener mListener;
 
     public IssueDetailsFragment() {
-        // Required empty public constructor
+
     }
 
     public static IssueDetailsFragment newInstance() {
@@ -87,8 +88,10 @@ public class IssueDetailsFragment extends Fragment {
         mCurrentStateImg = (ImageView) view.findViewById(R.id.issue_detail_state_image);
         mCommentsListView = (ListView) view.findViewById(R.id.issue_detail_commentlist);
 
+        //Initially populate these views
         populateUI();
 
+        //Set the click event listeners
         mEdit.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -125,15 +128,26 @@ public class IssueDetailsFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
+        //Set the page title on the actionbar
+        mActivity.getSupportActionBar().setTitle(R.string.issuedetail_title);
+
+        //Setup the Open/Close state images and buttons according to the data
         setupStateIcons();
+
+        //Fetch the comments if any, associated with this issue
         (new CommentsFetcherTask(mModel.getCommentsUrl())).execute();
     }
 
+    /**
+     * Helpr methods and private classes
+     */
     private void populateUI() {
-        mTitle.setText(mModel.getTitle() + " #" + mModel.getNumber());
-        mBody.setText(mModel.getBody());
-        mAuthor.setText(mModel.getUser().getLogin());
-        mState.setText(mModel.getState().equals("open") ? "Open" : "Closed");
+        if(mModel != null) {
+            mTitle.setText(mModel.getTitle() + " #" + mModel.getNumber());
+            mBody.setText(mModel.getBody());
+            mAuthor.setText(mModel.getUser().getLogin());
+            mState.setText(mModel.getState().equals("open") ? "Open" : "Closed");
+        }
     }
 
     private void setupStateIcons(){
@@ -157,7 +171,7 @@ public class IssueDetailsFragment extends Fragment {
         final View issueCreateView = ((LayoutInflater) mActivity.getSystemService(Context.LAYOUT_INFLATER_SERVICE))
                 .inflate(R.layout.dialog_issue_create, null);
         builder.setView(issueCreateView);
-        builder.setTitle(getString(R.string.create_issue));
+        builder.setTitle(getString(R.string.edit_issue));
 
         final EditText title = (EditText) issueCreateView.findViewById(R.id.issuecreate_title);
         final EditText body = (EditText) issueCreateView.findViewById(R.id.issuecreate_body);
@@ -165,14 +179,14 @@ public class IssueDetailsFragment extends Fragment {
         title.setText(mTitle.getText().toString().trim());
         body.setText(mBody.getText().toString().trim());
 
-        builder.setPositiveButton("Update", new DialogInterface.OnClickListener() {
+        builder.setPositiveButton(getString(R.string.update), new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 mTitleStr = title.getText().toString().trim();
                 mBodyStr = body.getText().toString().trim();
                 if(!TextUtils.isEmpty(mTitleStr)) new IssueEditTask().execute("titlebody");
             }
-        }).setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+        }).setNegativeButton(getString(R.string.cancel), new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 dialog.dismiss();
@@ -267,6 +281,8 @@ public class IssueDetailsFragment extends Fragment {
 
             if(isSuccess){
                 if(mListener != null) mListener.onIssueChanged();
+            }else{
+                Toast.makeText(mActivity, "Could not edit the issue.", Toast.LENGTH_LONG).show();
             }
         }
     }

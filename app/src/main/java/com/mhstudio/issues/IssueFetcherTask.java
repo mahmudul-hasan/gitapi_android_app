@@ -68,6 +68,8 @@ public class IssueFetcherTask extends AsyncTask<Void, Void, IssuesModel[]> {
     protected void onPostExecute(IssuesModel[] issues) {
         super.onPostExecute(issues);
 
+        if(issues == null) return;
+
         for(int i=0; i<issues.length; i++){
             Log.i("JSONRESP", issues[i].getPullRequest()==null? "null" : "PR");
         }

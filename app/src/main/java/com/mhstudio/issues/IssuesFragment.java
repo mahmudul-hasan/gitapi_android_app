@@ -19,6 +19,7 @@ import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.mhstudio.weworkgithubapp.MainActivity;
 import com.mhstudio.weworkgithubapp.R;
@@ -35,6 +36,7 @@ public class IssuesFragment extends Fragment {
     private MainActivity mActivity;
     private IssuesModel[] mIssuesArray;
 
+    private TextView mNoIssueYet;
     private ListView mListView;
     private FloatingActionButton mAddIssue;
     private IssueAdapter mAdapter;
@@ -46,7 +48,7 @@ public class IssuesFragment extends Fragment {
     private IssueListener mListener;
 
     public IssuesFragment() {
-        // Required empty public constructor
+
     }
 
     public static IssuesFragment newInstance() {
@@ -69,12 +71,14 @@ public class IssuesFragment extends Fragment {
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        mNoIssueYet = (TextView) view.findViewById(R.id.issues_not_yet);
         mListView = (ListView) view.findViewById(R.id.issues_listview);
         mAddIssue = (FloatingActionButton) view.findViewById(R.id.issues_create_fab);
 
         mAdapter = new IssueAdapter(mActivity, mIssuesArray);
         mListView.setAdapter(mAdapter);
 
+        //Setting click events
         mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
@@ -90,6 +94,9 @@ public class IssuesFragment extends Fragment {
                 initiateIssueCreation();
             }
         });
+
+        //Initially check if the selected repo has no issue yet
+        noIssueYet();
     }
 
     @Override
@@ -106,6 +113,11 @@ public class IssuesFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
+        //Setting up the page name on the actionbar
+        mActivity.getSupportActionBar().setTitle(R.string.issues_title);
+
+        //When coming back from the IssueDetailsFragment after something updated there, request
+        //the updated list and refresh the issues
         mListener.requestIssuesDataUpdate();
     }
 
@@ -114,9 +126,25 @@ public class IssuesFragment extends Fragment {
         super.onDetach();
     }
 
+    private void noIssueYet() {
+        if(mIssuesArray.length > 0){
+            mNoIssueYet.setVisibility(View.GONE);
+        }else{
+            mNoIssueYet.setVisibility(View.VISIBLE);
+        }
+    }
+
+    /**
+     * Helper methods and private classes
+     */
     public void setUpdatedIssues(IssuesModel[] data){
         mIssuesArray = data;
+        //once the updated issue data is obtained check if we still have no issue
+        noIssueYet();
+
+        //Then update the adapter and the listview with the new data
         mAdapter.setData(mIssuesArray);
+        mAdapter.notifyDataSetChanged();
         ((IssueAdapter) mListView.getAdapter()).notifyDataSetChanged();
     }
 
@@ -126,9 +154,10 @@ public class IssuesFragment extends Fragment {
                 .inflate(R.layout.dialog_issue_create, null);
         builder.setView(issueCreateView);
         builder.setTitle(getString(R.string.create_issue));
-        builder.setPositiveButton("Create", new DialogInterface.OnClickListener() {
+        builder.setPositiveButton(getString(R.string.create), new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
+                //If we click Create button it will proceed with the AddIssueTask to create new issue
                 EditText title = (EditText) issueCreateView.findViewById(R.id.issuecreate_title);
                 EditText body = (EditText) issueCreateView.findViewById(R.id.issuecreate_body);
 
@@ -137,7 +166,7 @@ public class IssuesFragment extends Fragment {
 
                 if(!TextUtils.isEmpty(titleStr)) (new AddIssueTask(titleStr, bodyStr)).execute();
             }
-        }).setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+        }).setNegativeButton(getString(R.string.cancel), new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 dialog.dismiss();
@@ -184,6 +213,7 @@ public class IssuesFragment extends Fragment {
         protected void onPostExecute(Boolean isSuccess) {
             super.onPostExecute(isSuccess);
             if(isSuccess) mListener.requestIssuesDataUpdate();
+            else Toast.makeText(mActivity, "Something went wrong while creating the issue.", Toast.LENGTH_LONG).show();
         }
     }
 }

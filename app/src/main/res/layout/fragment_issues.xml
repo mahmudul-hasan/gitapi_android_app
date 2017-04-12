@@ -1,9 +1,17 @@
-<RelativeLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     tools:context="com.mhstudio.issues.IssuesFragment">
+
+    <TextView
+        android:id="@+id/issues_not_yet"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="This repository does not have any issue yet."
+        android:layout_centerInParent="true"
+        android:textStyle="bold"/>
 
     <ListView
         android:id="@+id/issues_listview"
@@ -15,6 +23,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:src="@drawable/ic_add"
+        app:backgroundTint="@color/colorPrimary"
         android:layout_alignParentBottom="true"
         android:layout_alignParentRight="true"
         android:layout_marginRight="30dp"

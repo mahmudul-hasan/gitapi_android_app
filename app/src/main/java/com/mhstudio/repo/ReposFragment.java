@@ -28,7 +28,7 @@ public class ReposFragment extends Fragment {
     private RepositoryListener mListener;
 
     public ReposFragment() {
-        // Required empty public constructor
+
     }
 
     public static ReposFragment newInstance() {
@@ -57,6 +57,7 @@ public class ReposFragment extends Fragment {
         mAdapter = new RepoAdapter(mActivity, mModelArray);
         mListView.setAdapter(mAdapter);
 
+        //List item selection event handler setup
         mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
@@ -64,6 +65,13 @@ public class ReposFragment extends Fragment {
                 mListener.onRepositorySelected(selected.getName());
             }
         });
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        //Setting up the page name on the actionbar
+        mActivity.getSupportActionBar().setTitle(R.string.repos_title);
     }
 
     @Override

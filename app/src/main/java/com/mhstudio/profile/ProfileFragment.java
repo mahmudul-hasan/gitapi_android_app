@@ -25,13 +25,8 @@ public class ProfileFragment extends Fragment {
     private TextView mName, mUserName, mCompany, mLocation, mEmail, mLink, mRepos, mGists, mFollowers, mFollowing;
     private ImageView mProfilePic;
 
-    public interface OnProfileFragmentListener {
-        void onFragmentInteraction(Uri uri);
-    }
-    private OnProfileFragmentListener mListener;
-
     public ProfileFragment() {
-        // Required empty public constructor
+
     }
 
     public static ProfileFragment newInstance() {
@@ -68,6 +63,24 @@ public class ProfileFragment extends Fragment {
         mFollowing = (TextView) view.findViewById(R.id.profile_following);
 
         //Setting the values to the views
+        populateViews();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        //Setting up the page name on the actionbar
+        mActivity.getSupportActionBar().setTitle(R.string.profile_title);
+    }
+
+    @Override
+    public void onAttach(Activity activity) {
+        super.onAttach(activity);
+        mActivity = (MainActivity) activity;
+        mModel = mActivity.getProfileModel();
+    }
+
+    private void populateViews() {
         if(mModel != null){
             Picasso.with(mActivity).load(mModel.getAvatarUrl()).into(mProfilePic);
             mName.setText(mModel.getName());
@@ -81,18 +94,5 @@ public class ProfileFragment extends Fragment {
             mFollowers.setText(getString(R.string.profile_followers) + String.valueOf(mModel.getFollowers()));
             mFollowing.setText(getString(R.string.profile_following) + String.valueOf(mModel.getFollowing()));
         }
-    }
-
-    @Override
-    public void onAttach(Activity activity) {
-        super.onAttach(activity);
-        mActivity = (MainActivity) activity;
-        mModel = mActivity.getProfileModel();
-    }
-
-    @Override
-    public void onDetach() {
-        super.onDetach();
-        mListener = null;
     }
 }
